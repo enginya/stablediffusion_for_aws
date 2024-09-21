@@ -11,7 +11,8 @@ SSH_HOST_ALIAS = github github.com
 GITHUB_HOST = github.com
 
 # デフォルトのターゲット
-all: setup_ssh install_git clone install_docker configure_nvidia
+prepare: setup_ssh install_git
+build: clone install_docker configure_nvidia
 
 # SSHキー作成ターゲット
 setup_ssh:
@@ -58,12 +59,19 @@ install_docker:
 	@echo "Removing any conflicting containerd packages..."
 	@sudo apt-get remove -y containerd containerd.io
 	@echo "Adding Docker’s official GPG key and setting up the repository..."
-	@sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg lsb-release
-	@sudo mkdir -p /etc/apt/keyrings
-	@curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-	@echo "deb [arch=$$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+	@if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
+		sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg lsb-release; \
+		sudo mkdir -p /etc/apt/keyrings; \
+		curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg; \
+		echo "deb [arch=$$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+	fi
 	@echo "Installing Docker and containerd..."
-	@sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+	# リトライを含めたdpkgのインストールプロセス
+	@for i in 1 2 3; do \
+		sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin && break; \
+		echo "Retrying installation..."; \
+		sleep 10; \
+	done
 	@sudo systemctl start docker
 	@sudo systemctl enable docker
 	@sudo usermod -aG docker ubuntu

@@ -5,6 +5,7 @@ FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu22.04
 RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
+    python3-pip \
     git \
     g++ \
     cmake \
@@ -17,13 +18,13 @@ WORKDIR /app
 COPY ./automatic1111 /app
 
 # Pythonの依存関係をインストール
-RUN pip install --upgrade pip
-RUN pip install --upgrade huggingface_hub
+RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade huggingface_hub
 # CUDA対応のPyTorchをインストール
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
-RUN pip install -r requirements.txt
+RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+RUN pip3 install -r requirements.txt
 
 # Web UIのポートを公開
 EXPOSE 7860
 
-CMD ["python", "launch.py", "--share", "--listen", "--port", "7860"]
+CMD ["python3", "launch.py", "--share", "--listen", "--port", "7860"]
