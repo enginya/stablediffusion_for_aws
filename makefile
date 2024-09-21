@@ -7,7 +7,7 @@ CLONE_DIR = automatic1111
 # SSHキー関連
 SSH_KEY_PATH = ~/.ssh/id_rsa_github
 SSH_CONFIG_PATH = ~/.ssh/config
-SSH_HOST_ALIAS = github
+SSH_HOST_ALIAS = github github.com
 GITHUB_HOST = github.com
 
 # デフォルトのターゲット
@@ -39,7 +39,7 @@ install_git:
 		echo "Git is already installed. Skipping installation."; \
 	else \
 		echo "Git not found. Installing Git..."; \
-		sudo yum install git -y; \
+		sudo apt-get update && sudo apt-get install -y git; \
 		echo "Git installation completed."; \
 	fi
 
@@ -55,11 +55,18 @@ clone:
 
 # Dockerインストールターゲット
 install_docker:
-	@echo "Installing Docker..."
-	@sudo amazon-linux-extras install docker -y
-	@sudo service docker start
-	@sudo usermod -a -G docker ec2-user
-	@sudo yum install docker-compose -y
+	@echo "Removing any conflicting containerd packages..."
+	@sudo apt-get remove -y containerd containerd.io
+	@echo "Adding Docker’s official GPG key and setting up the repository..."
+	@sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg lsb-release
+	@sudo mkdir -p /etc/apt/keyrings
+	@curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+	@echo "deb [arch=$$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+	@echo "Installing Docker and containerd..."
+	@sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+	@sudo systemctl start docker
+	@sudo systemctl enable docker
+	@sudo usermod -aG docker ubuntu
 	@echo "Docker and Docker Compose installation completed. You may need to log out and log back in for group changes to take effect."
 
 # NVIDIA Container Toolkit のインストールと Docker 設定
