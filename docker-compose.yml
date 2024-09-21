@@ -1,0 +1,19 @@
+services:
+  stable_diffusion:
+    build: .
+    ports:
+      - "7860:7860"
+    container_name: automatic1111
+    environment:
+      - COMMANDLINE_ARGS=--listen --port 7860
+      - PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.6,max_split_size_mb:128
+    volumes:
+      - ./automatic1111/models:/app/models
+      - ./automatic1111/outputs:/app/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu] # Allow GPU usage
