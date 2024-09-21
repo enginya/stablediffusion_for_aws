@@ -17,3 +17,4 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu] # Allow GPU usage
+    runtime: nvidia # NVIDIAランタイムを使用

@@ -12,7 +12,7 @@ GITHUB_HOST = github.com
 
 # デフォルトのターゲット
 prepare: setup_ssh install_git
-build: clone install_docker configure_nvidia
+build: clone install_docker configure_nvidia_runtime
 
 # SSHキー作成ターゲット
 setup_ssh:
@@ -77,24 +77,17 @@ install_docker:
 	@sudo usermod -aG docker ubuntu
 	@echo "Docker and Docker Compose installation completed. You may need to log out and log back in for group changes to take effect."
 
-# NVIDIA Container Toolkit のインストールと Docker 設定
-configure_nvidia:
-	@echo "Configuring Docker for NVIDIA GPU support..."
-	# Install NVIDIA Container Toolkit
-	@distribution=$$(. /etc/os-release;echo $$ID$$VERSION_ID) && \
-	curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - && \
-	curl -s -L https://nvidia.github.io/nvidia-docker/$$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list && \
-	sudo apt-get update && sudo apt-get install -y nvidia-docker2
-	@echo "NVIDIA Container Toolkit installed."
-	# Configure Docker to use NVIDIA runtime
-	@echo "Setting NVIDIA runtime in Docker daemon.json..."
-	@sudo mkdir -p /etc/docker
-	@echo '{ "runtimes": { "nvidia": { "path": "nvidia-container-runtime", "runtimeArgs": [] } } }' | sudo tee /etc/docker/daemon.json
-	@echo "NVIDIA runtime added to Docker."
-	# Restart Docker to apply changes
-	@echo "Restarting Docker service..."
+# NVIDIAランタイム設定
+configure_nvidia_runtime:
+	@echo "Configuring Docker to use NVIDIA runtime..."
+	@if [ ! -f /etc/docker/daemon.json ]; then \
+		echo '{ "runtimes": { "nvidia": { "path": "nvidia-container-runtime", "runtimeArgs": [] } } }' | sudo tee /etc/docker/daemon.json; \
+	else \
+		echo "Daemon config exists. Adding NVIDIA runtime."; \
+		sudo sed -i 's/}/, "runtimes": { "nvidia": { "path": "nvidia-container-runtime", "runtimeArgs": [] } } }/' /etc/docker/daemon.json; \
+	fi
 	@sudo systemctl restart docker
-	@echo "Docker restarted with NVIDIA GPU support."
+	@echo "Docker restarted with NVIDIA runtime configuration."
 
 # クリーンアップ用のターゲット
 clean:
@@ -102,4 +95,4 @@ clean:
 	@rm -rf $(CLONE_DIR)
 	@echo "Cleanup completed."
 
-.PHONY: all setup_ssh install_git clone install_docker configure_nvidia clean
+.PHONY: all setup_ssh install_git clone install_docker configure_nvidia_runtime clean

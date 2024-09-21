@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# NVIDIAライブラリのパスを設定
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:/usr/lib/x86_64-linux-gnu/
+
 # 作業ディレクトリを設定
 WORKDIR /app
 COPY ./automatic1111 /app
