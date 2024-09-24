@@ -86,6 +86,7 @@ install_nvidia_driver:
 # NVIDIAランタイム設定
 configure_nvidia_runtime:
 	@echo "Configuring Docker to use NVIDIA runtime..."
+	@sudo apt-get install -y nvidia-container-runtime
 	@if [ ! -f /etc/docker/daemon.json ]; then \
 		echo '{ "runtimes": { "nvidia": { "path": "nvidia-container-runtime", "runtimeArgs": [] } } }' | sudo tee /etc/docker/daemon.json; \
 	else \
@@ -105,5 +106,13 @@ clean:
 	@echo "Removing cloned repository..."
 	@rm -rf $(CLONE_DIR)
 	@echo "Cleanup completed."
+
+# automatic1111スタート
+start:
+	@docker compose up
+
+# automatic1111スタート
+down:
+	@docker compose down
 
 .PHONY: all setup_ssh install_git clone install_docker install_nvidia_driver configure_nvidia_runtime restart_system clean
