@@ -12,7 +12,7 @@ GITHUB_HOST = github.com
 
 # デフォルトのターゲット
 prepare: setup_ssh install_git
-build: clone install_docker configure_nvidia_runtime
+build: clone install_docker install_nvidia_driver configure_nvidia_runtime restart_system
 
 # SSHキー作成ターゲット
 setup_ssh:
@@ -77,6 +77,12 @@ install_docker:
 	@sudo usermod -aG docker ubuntu
 	@echo "Docker and Docker Compose installation completed. You may need to log out and log back in for group changes to take effect."
 
+# NVIDIAドライバのインストール
+install_nvidia_driver:
+	@echo "Installing NVIDIA driver 535..."
+	@sudo apt-get update && sudo apt-get install -y nvidia-driver-535
+	@echo "NVIDIA driver 535 installed."
+
 # NVIDIAランタイム設定
 configure_nvidia_runtime:
 	@echo "Configuring Docker to use NVIDIA runtime..."
@@ -89,10 +95,15 @@ configure_nvidia_runtime:
 	@sudo systemctl restart docker
 	@echo "Docker restarted with NVIDIA runtime configuration."
 
+# システム再起動
+restart_system:
+	@echo "Rebooting the system to apply NVIDIA driver..."
+	@sudo reboot
+
 # クリーンアップ用のターゲット
 clean:
 	@echo "Removing cloned repository..."
 	@rm -rf $(CLONE_DIR)
 	@echo "Cleanup completed."
 
-.PHONY: all setup_ssh install_git clone install_docker configure_nvidia_runtime clean
+.PHONY: all setup_ssh install_git clone install_docker install_nvidia_driver configure_nvidia_runtime restart_system clean
